@@ -5,41 +5,38 @@ require("dotenv").config();
 
 const app = express();
 
+/* ================= CORS FIX ================= */
 
-// MIDDLEWARE
 app.use(cors({
   origin: "http://localhost:5173",
-  credentials: true
+  methods: ["GET","POST","PUT","DELETE"],
+  allowedHeaders: ["Content-Type"]
 }));
+
+/* ============================================ */
 
 app.use(express.json());
 
+/* ================= DATABASE ================= */
 
-// DATABASE CONNECTION
 mongoose.connect(process.env.MONGO_URI)
-.then(() => {
-  console.log("✅ MongoDB Connected");
-})
-.catch((err) => {
-  console.log("MongoDB Error:", err);
-});
+.then(()=> console.log("✅ MongoDB Connected"))
+.catch(err=> console.log(err));
 
+/* ================= ROUTES ================= */
 
-// ROUTES
-app.use("/api/auth", require("./routes/auth"));
 app.use("/api/services", require("./routes/services"));
-app.use("/api/bookings", require("./routes/bookings"));
 
+/* ================= TEST ================= */
 
-// TEST ROUTE
-app.get("/", (req, res) => {
-  res.send("🚀 LocalConnect Backend Running");
+app.get("/",(req,res)=>{
+  res.send("Backend running");
 });
 
+/* ================= SERVER ================= */
 
-// SERVER
-const PORT = process.env.PORT || 5000;
+const PORT = 5000;
 
-app.listen(PORT, () => {
+app.listen(PORT,()=>{
   console.log(`🚀 Server running on port ${PORT}`);
 });
