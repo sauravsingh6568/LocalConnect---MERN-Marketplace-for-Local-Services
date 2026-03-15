@@ -2,20 +2,21 @@ const express = require("express");
 const router = express.Router();
 const Service = require("../models/Service");
 
-/* CREATE SERVICE */
+/* ADD SERVICE */
+
 router.post("/", async (req,res)=>{
   try{
 
     const {title,description,location,price} = req.body;
 
-    const newService = new Service({
+    const service = new Service({
       title,
       description,
       location,
       price
     });
 
-    const savedService = await newService.save();
+    const savedService = await service.save();
 
     res.status(201).json(savedService);
 
@@ -25,6 +26,7 @@ router.post("/", async (req,res)=>{
 });
 
 /* GET ALL SERVICES */
+
 router.get("/", async (req,res)=>{
   try{
 

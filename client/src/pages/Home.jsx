@@ -1,70 +1,32 @@
-import React from "react";
-import ServiceCard from "../components/ServiceCard";
+import React, { useEffect, useState } from "react";
+import API from "../services/api";
 
 const Home = () => {
 
-  const services = [
-    {
-      title: "Electrician",
-      description: "Expert electrical repair and installation services.",
-      location: "Bareilly"
-    },
-    {
-      title: "Plumber",
-      description: "Fix leaks, pipes and bathroom fittings quickly.",
-      location: "Bareilly"
-    },
-    {
-      title: "Home Tutor",
-      description: "Personal tutors for school and college subjects.",
-      location: "Bareilly"
-    },
-    {
-      title: "Car Mechanic",
-      description: "Reliable car repair and servicing near you.",
-      location: "Bareilly"
-    },
-    {
-      title: "AC Repair",
-      description: "Fast air conditioner repair and installation.",
-      location: "Bareilly"
-    },
-    {
-      title: "House Cleaning",
-      description: "Professional home and office cleaning service.",
-      location: "Bareilly"
-    }
-  ];
+  const [services, setServices] = useState([]);
+
+  useEffect(() => {
+    fetchServices();
+  }, []);
+
+  const fetchServices = async () => {
+    const res = await API.get("/services");
+    setServices(res.data);
+  };
 
   return (
-    <div className="max-w-7xl mx-auto px-4">
+    <div className="max-w-6xl mx-auto mt-10 grid grid-cols-3 gap-6">
 
-      <div className="text-center mt-16">
+      {services.map((service) => (
+        <div key={service._id} className="bg-white p-5 shadow rounded">
 
-        <h1 className="text-4xl font-bold text-gray-800">
-          Find Trusted Local Services
-        </h1>
+          <h2 className="text-xl font-bold">{service.title}</h2>
+          <p>{service.description}</p>
+          <p>{service.location}</p>
+          <p>₹{service.price}</p>
 
-        <p className="text-gray-600 mt-3">
-          Book electricians, plumbers, tutors and more near you.
-        </p>
-
-      </div>
-
-      {/* SERVICES GRID */}
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-12">
-
-        {services.map((service, index) => (
-          <ServiceCard
-            key={index}
-            title={service.title}
-            description={service.description}
-            location={service.location}
-          />
-        ))}
-
-      </div>
+        </div>
+      ))}
 
     </div>
   );

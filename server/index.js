@@ -5,38 +5,39 @@ require("dotenv").config();
 
 const app = express();
 
-/* ================= CORS FIX ================= */
+/* ===== FIX CORS ===== */
 
 app.use(cors({
   origin: "http://localhost:5173",
-  methods: ["GET","POST","PUT","DELETE"],
-  allowedHeaders: ["Content-Type"]
+  credentials: true
 }));
 
-/* ============================================ */
+/* ==================== */
 
 app.use(express.json());
 
-/* ================= DATABASE ================= */
+/* ===== DATABASE ===== */
 
 mongoose.connect(process.env.MONGO_URI)
 .then(()=> console.log("✅ MongoDB Connected"))
 .catch(err=> console.log(err));
 
-/* ================= ROUTES ================= */
+/* ===== ROUTES ===== */
 
-app.use("/api/services", require("./routes/services"));
+const serviceRoutes = require("./routes/services");
 
-/* ================= TEST ================= */
+app.use("/api/services", serviceRoutes);
 
-app.get("/",(req,res)=>{
+/* ===== TEST ROUTE ===== */
+
+app.get("/", (req,res)=>{
   res.send("Backend running");
 });
 
-/* ================= SERVER ================= */
+/* ===== SERVER ===== */
 
-const PORT = 5000;
+const PORT = 5001;
 
-app.listen(PORT,()=>{
+app.listen(PORT, ()=>{
   console.log(`🚀 Server running on port ${PORT}`);
 });
