@@ -1,79 +1,144 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { Link, Navigate } from "react-router-dom";
+import API, { getApiErrorMessage, isRequestCanceled } from "../services/api";
+import { useAuth } from "../context/useAuth";
 
 const Dashboard = () => {
+  const { isAuthenticated, provider } = useAuth();
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [deletingId, setDeletingId] = useState("");
 
-  const [services, setServices] = useState([
-    {
-      id: 1,
-      title: "Electrician",
-      description: "Electrical repair and installation",
-      location: "Bareilly",
-      price: 500
-    },
-    {
-      id: 2,
-      title: "Plumber",
-      description: "Fix pipe leaks and fittings",
-      location: "Bareilly",
-      price: 300
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const fetchMyServices = async () => {
+      try {
+        setError("");
+        setLoading(true);
+        const res = await API.get("/services/user", { signal: controller.signal });
+        setServices(res.data);
+      } catch (err) {
+        if (!isRequestCanceled(err)) {
+          setError(getApiErrorMessage(err, "Unable to load services"));
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    if (isAuthenticated) {
+      fetchMyServices();
     }
-  ]);
 
-  const handleDelete = (id) => {
-    const updated = services.filter(service => service.id !== id);
-    setServices(updated);
+    return () => controller.abort();
+  }, [isAuthenticated]);
+
+  const handleDelete = async (serviceId) => {
+    const confirmed = window.confirm("Delete this service?");
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setError("");
+      setDeletingId(serviceId);
+      await API.delete(`/services/${serviceId}`);
+      setServices((currentServices) => (
+        currentServices.filter((service) => service._id !== serviceId)
+      ));
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Unable to delete service"));
+    } finally {
+      setDeletingId("");
+    }
   };
 
-  return (
-    <div className="max-w-6xl mx-auto px-4 mt-10">
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
 
-      <h1 className="text-3xl font-bold mb-8 text-gray-800">
-        My Services
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
+
+      <h1 className="mb-2 text-2xl font-bold text-gray-900 sm:text-3xl">
+        Provider Dashboard
       </h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <p className="mb-6 text-gray-600">
+        Welcome, {provider?.name}
+      </p>
 
-        {services.map(service => (
+      <div className="rounded-xl bg-white p-4 shadow sm:p-6">
 
-          <div
-            key={service.id}
-            className="bg-white p-6 rounded-xl shadow-md"
+        <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-6">
+          <h2 className="text-xl font-semibold">
+            My Services
+          </h2>
+
+          <Link
+            to="/add-service"
+            className="inline-flex justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
           >
+            Add Service
+          </Link>
+        </div>
 
-            <h2 className="text-xl font-semibold">
-              {service.title}
-            </h2>
+        {error && (
+          <p className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+            {error}
+          </p>
+        )}
 
-            <p className="text-gray-600 mt-2">
-              {service.description}
-            </p>
-
-            <p className="text-gray-500 mt-2">
-              📍 {service.location}
-            </p>
-
-            <p className="font-semibold mt-2">
-              ₹ {service.price}
-            </p>
-
-            <div className="flex gap-3 mt-4">
-
-              <button className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600">
-                Edit
-              </button>
-
-              <button
-                onClick={() => handleDelete(service.id)}
-                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
-              >
-                Delete
-              </button>
-
-            </div>
-
+        {loading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map((item) => (
+              <div key={item} className="h-32 animate-pulse rounded-lg bg-gray-100" />
+            ))}
           </div>
+        ) : services.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-gray-600">
+            Services you post will appear here.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {services.map((service) => (
+              <div
+                key={service._id}
+                className="flex flex-col gap-4 rounded-lg border border-gray-200 p-4 sm:flex-row sm:items-start sm:justify-between"
+              >
+                <div>
+                  <h3 className="font-semibold text-gray-900">{service.title}</h3>
+                  <p className="text-blue-600 text-sm font-medium">{service.category}</p>
+                  <p className="mt-2 text-gray-600">{service.description}</p>
+                  <p className="mt-2 text-gray-500">{service.location}</p>
+                  {service.phoneNumber && (
+                    <p className="text-gray-500">Phone: {service.phoneNumber}</p>
+                  )}
+                  {service.whatsappNumber && (
+                    <p className="text-gray-500">WhatsApp: {service.whatsappNumber}</p>
+                  )}
+                  {service.price !== undefined && service.price !== null && (
+                    <p className="font-semibold mt-2">₹{service.price}</p>
+                  )}
+                </div>
 
-        ))}
+                <button
+                  type="button"
+                  onClick={() => handleDelete(service._id)}
+                  disabled={deletingId === service._id}
+                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300"
+                >
+                  {deletingId === service._id ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
       </div>
 
