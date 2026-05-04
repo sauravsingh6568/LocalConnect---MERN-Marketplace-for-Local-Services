@@ -19,7 +19,6 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    // allow requests with no origin (mobile apps, postman)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
