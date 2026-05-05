@@ -4,45 +4,33 @@ const cors = require("cors");
 require("dotenv").config();
 
 const app = express();
-
-/* ===== MODELS ===== */
 const User = require("./models/User");
 
-/* ===== CONFIG ===== */
+const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
 const PORT = process.env.PORT || 5001;
 
-/* ===== CORS CONFIG (FIXED) ===== */
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://localconnectmernproject.netlify.app"
-];
+/* ===== CORS ===== */
 
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("CORS not allowed: " + origin));
-    }
-  },
+  origin: CLIENT_URL,
   credentials: true
 }));
 
-// Handle preflight requests
-app.options("*", cors());
+/* ==================== */
 
-/* ===== MIDDLEWARE ===== */
 app.use(express.json({ limit: "2mb" }));
 
 /* ===== DATABASE ===== */
+
 mongoose.connect(process.env.MONGO_URI)
-  .then(async () => {
-    await User.syncIndexes();
-    console.log("✅ MongoDB Connected");
-  })
-  .catch(err => console.error("❌ MongoDB Error:", err.message));
+.then(async ()=>{
+  await User.syncIndexes();
+  console.log("✅ MongoDB Connected");
+})
+.catch(err=> console.error("MongoDB connection error:", err.message));
 
 /* ===== ROUTES ===== */
+
 const serviceRoutes = require("./routes/services");
 const authRoutes = require("./routes/auth");
 
@@ -50,20 +38,14 @@ app.use("/api/auth", authRoutes);
 app.use("/api/services", serviceRoutes);
 
 /* ===== TEST ROUTE ===== */
-app.get("/", (req, res) => {
-  res.send("🚀 Backend running successfully");
-});
 
-/* ===== ERROR HANDLER (IMPORTANT) ===== */
-app.use((err, req, res, next) => {
-  console.error("🔥 Error:", err.message);
-  res.status(500).json({
-    success: false,
-    message: err.message || "Internal Server Error"
-  });
+app.get("/", (req,res)=>{
+  res.send("Backend running");
 });
 
 /* ===== SERVER ===== */
-app.listen(PORT, () => {
+
+app.listen(PORT, ()=>{
   console.log(`🚀 Server running on port ${PORT}`);
 });
+
